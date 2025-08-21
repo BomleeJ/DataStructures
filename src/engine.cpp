@@ -24,14 +24,18 @@ void Engine::loadCSV(const std::string& path) {
 
 bool Engine::add(const ItemHandle& item) {
     // TODO: Implement: check BST duplicate, insert into hash and BST atomically
-    (void)item;
+    if (ordered_.contains(item)) {return false; }
+
+    ordered_.insert(item);
+    byName_.insert(item.name(), item);
+
     return false; // STUB forces tests to fail until implemented
 }
 
 bool Engine::eraseByName(const std::string& name) {
     // TODO: Implement: find by name in hash, remove from both structures
-    (void)name;
-    return false; // STUB
+    ItemHandle value = *findByName(name);
+    return byName_.erase(name) && ordered_.erase(value); // STUB
 }
 
 const ItemHandle* Engine::findByName(const std::string& name) const {
