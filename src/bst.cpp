@@ -12,7 +12,14 @@ void BST::clear(Node* n) {
 
 // TODO: Implement insert (ignore duplicate)
 BST::Node* BST::insertNode(Node* n, const ItemHandle& v, bool& added) {
-    if (n == nullptr) { return new Node(v); }
+    
+    if (n == nullptr) { 
+        added = true;
+        return new Node(v);
+    }
+
+    
+    
     Node* curr = n;
     Node* prev = nullptr;
     added = false;
@@ -51,6 +58,7 @@ BST::Node* BST::insertNode(Node* n, const ItemHandle& v, bool& added) {
 
 void BST::insert(const ItemHandle& v) {
     bool added = false;
+    if (contains(v)) { return; }
     root_ = insertNode(root_, v, added);
     if (added) ++size_;
 }
@@ -75,8 +83,8 @@ void BST::inorderWalk(Node* n, std::vector<ItemHandle>& out) {
     inorderWalk(n->left, out);
     out.push_back(n->val);
     inorderWalk(n->right, out);
-
 }
+
 void BST::inorder(std::vector<ItemHandle>& out) const { out.clear(); inorderWalk(root_, out); }
 
 // TODO: Implement validity check (strict BST)
@@ -97,83 +105,71 @@ bool BST::isValid(Node* n, const ItemHandle* lo, const ItemHandle* hi) {
 bool BST::isValidBST() const { return isValid(root_, nullptr, nullptr); }
 
 // Helper for two-child delete (successor)
-BST::Node* BST::detachMin(Node* n, Node*& minNode) {
-    while (n->left->left != nullptr)
+BST::Node* BST::detachMin(Node* RSTRoot, Node*& minNode) {
+/*minnode is replacement! we simply need to addign minNode and delete its current presence*/
+if (RSTRoot->left == nullptr)
+{
+    minNode = RSTRoot;
+    return RSTRoot->right; /*new RST Root Technically will be nullptr if childless*/
+}
+
+RSTRoot->left = detachMin(RSTRoot->left, minNode);
+return RSTRoot;
+}
+
+
+bool BST::no_children(Node* n) { return (n->right == nullptr && n->left == nullptr); }
+bool BST::one_child(Node* n) { return !(no_children(n) || two_children(n)); }
+bool BST::two_children(Node* n) { return (n->right != nullptr && n->left != nullptr); }
+
+// Helper to eraseRoot returns new Root
+BST::Node* BST::eraseRoot(Node* root, bool& erased)
+{  
+    erased = true;
+    if (no_children(root))
     {
-        n = n->left;
+        delete root;
+        return nullptr; // Will be returned to root_ in call stack 
     }
-    minNode = n->left;
-    n->left = nullptr;
-    return n;
+    else if (one_child(root))
+    {
+        Node* child = (root->left == nullptr) ? root->right : root->left;
+        delete root;
+        return child;
+    }
+    else
+    {
+        Node* RSTRoot = root->right;
+        Node* Successor = nullptr;
+        RSTRoot = detachMin(RSTRoot, Successor); 
+        Successor->right = RSTRoot;
+        Successor->left = root->left;
+        delete root;
+        return Successor;
+    }
+    
 }
 
 // TODO: Implement erase (leaf / one child / two children via successor)
 BST::Node* BST::eraseNode(Node* n, const ItemHandle& v, bool& erased) {
-    erased = false;
-    Node* curr = n;
-    Node* prev = nullptr;
-    while(curr)
+    if (n == nullptr) { return n; }
+
+    if (n->val == v)
     {
-        
-        if (curr->val < v)
-        {
-            curr = curr->left;
-        }
-        else if (v < curr->val)
-        {
-            curr = curr->right;
-        }
-        else
-        {
-            break;
-        }
-        prev = curr;
+        return eraseRoot(n, erased);
     }
 
-    if (curr == nullptr) { return n; }
-
-    bool no_children = (prev->right == nullptr && prev->left == nullptr);
-    bool two_children = (prev->right != nullptr && prev->left != nullptr);
-    bool one_child = !(no_children || two_children);
-
-    if(no_children)
+    if (n->val < v)
     {
-        if (prev->left->val == v)
-        {
-            prev->left = nullptr;
-        }
-        else
-        {
-            prev->right = nullptr;
-        }
-    }
-    else if (one_child)
-    {
-        Node* child = (curr->left == nullptr) ? curr->right : curr->left;
-        if (prev->left->val == v)
-        {
-            prev->left = child;
-        }
-        else
-        {
-            prev->right = child;
-        }
+        n->right = eraseNode(n->right, v, erased);
+        return n;
     }
     else
     {
-        Node* minNode = nullptr;
-        detachMin(curr->right, minNode);
-        if (prev->left->val == v)
-        {
-            prev->left = minNode;
-        }
-        else
-        {
-            prev->right = minNode;
-        }
-
+        n->left = eraseNode(n->left, v, erased);
+        return n;
     }
-    return n; // STUB
+    
 }
 
 bool BST::erase(const ItemHandle& v) {

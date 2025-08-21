@@ -2,6 +2,9 @@
 #include "item.h"
 #include <vector>
 
+#include <iostream>
+#include <string>
+
 class BST {
 public:
     BST();
@@ -17,6 +20,11 @@ public:
     void   inorder(std::vector<ItemHandle>& out) const; // ascending by operator<
     bool   isValidBST() const;                          // strict check
 
+    void printBT()
+    {
+        printBT("", root_, false);
+    }
+
 private:
     struct Node {
         ItemHandle val;
@@ -31,8 +39,29 @@ private:
     static void  clear(Node* n);
     static Node* insertNode(Node* n, const ItemHandle& v, bool& added);
     static bool  containsNode(Node* n, const ItemHandle& v);
+    static bool no_children(Node* n);
+    static bool one_child(Node* n);
+    static bool two_children(Node* n);
+    static Node* eraseRoot(Node* root, bool& erased);
     static Node* eraseNode(Node* n, const ItemHandle& v, bool& erased);
     static Node* detachMin(Node* n, Node*& minNode);
     static void  inorderWalk(Node* n, std::vector<ItemHandle>& out);
     static bool  isValid(Node* n, const ItemHandle* lo, const ItemHandle* hi);
+
+    void printBT(std::string prefix, const Node* node, bool isLeft)
+    {
+        if( node != nullptr )
+        {
+            std::cout << prefix;
+
+            std::cout << (isLeft ? "├──" : "└──" );
+
+            // print the value of the node
+            std::cout << node->val << std::endl;
+
+            // enter the next tree level - left and right branch
+            printBT( prefix + (isLeft ? "│   " : "    "), node->left, true);
+            printBT( prefix + (isLeft ? "│   " : "    "), node->right, false);
+        }
+    }
 };
